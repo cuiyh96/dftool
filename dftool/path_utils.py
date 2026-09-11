@@ -1,5 +1,5 @@
 from .time_utils import TimeUtils
-from typing import Optional, Union, Dict, List, Any, Callable
+from typing import Union
 from pathlib import Path
 import os
 import pandas as pd
@@ -105,9 +105,11 @@ class PathUtils:
         else:
             # 更新目录的大小
             size_index = columns.index('size')
-            for j, item in enumerate(dir_info):
-                # size 的索引: size_index
-                item[size_index] = file_info_df[file_info_df['path'].str.contains(item[0])]['size'].sum()
-                dir_info[j] = item
+            for item in dir_info:
+                # 按目录路径前缀匹配其下所有文件（不能直接用 depth 整数做匹配）
+                dir_prefix = item[1] + os.sep
+                item[size_index] = file_info_df.loc[
+                    file_info_df['path'].str.startswith(dir_prefix, na=False), 'size'
+                ].sum()
             dir_info_df = pd.DataFrame(dir_info, columns=columns)
             return pd.concat([file_info_df, dir_info_df], ignore_index=True)

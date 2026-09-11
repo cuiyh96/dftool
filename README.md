@@ -10,7 +10,7 @@
 - **路径工具**：路径转换、目录信息获取
 - **时间工具**：时间格式转换、文件时间获取
 - **图可视化**：NetworkX/Pyvis 交互式图渲染
-- **命名
+- **命名空间工具**：字典与 Namespace 递归转换、路径访问、深度合并、JSON 序列化
 
 ## 项目结构
 ```
@@ -43,9 +43,9 @@ dftool/
 |---------|---------|------------|
 | `column_processor.py` | DataFrame 列处理 | `ColumnProcessor` 类 |
 | `common_utils.py` | 通用工具 | `CommonUtils` 类 |
-| `graph_tool.py` | 图可视化 | `save_graph_html()`, `rdflib_to_networkx()` |
+| `graph_tool.py` | 图可视化 | `save_graph_html()`, `save_graph_html_compatible()`, `rdflib_to_networkx()` |
 | `json_utils.py` | JSON 解析 | `JsonUtils` 类 |
-| `namespace_tools.py` | 命名空间转换 | `dict_to_namespace()`, `namespace_to_dict()` |
+| `namespace_tools.py` | 命名空间转换 | `dict_to_namespace()`, `namespace_to_dict()`, `deep_update()`, `get_nested_attr()`, `set_nested_attr()`, `filter_namespace_keys()`, `to_json()`, `from_json()` |
 | `path_utils.py` | 路径操作 | `PathUtils` 类 |
 | `time_utils.py` | 时间处理 | `TimeUtils` 类 |
 
@@ -56,3 +56,4 @@ dftool/
 ```bash
 cd /path/to/dftool
 pip install -e .
+```

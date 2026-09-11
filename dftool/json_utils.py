@@ -1,4 +1,4 @@
-from typing import Optional, Union, Dict, List, Any, Callable
+from typing import Optional, Union, Dict, List
 import re
 import json
 import ast
@@ -99,29 +99,3 @@ class JsonUtils:
         except Exception as e:
             logger.warning(f"提取JSON时出错: {e}, 文本: {text[:100]}...")
             return None
-    
-
-
-
-# def create_json_extractor(text_column: str, output_column: str) -> Callable[[pd.DataFrame], pd.DataFrame]:
-#     """
-#     创建 JSON 提取器函数
-    
-#     Args:
-#         text_column: 包含文本的列名
-#         output_column: 输出 JSON 数据的列名
-        
-#     Returns:
-#         接收 DataFrame 并返回处理后的 DataFrame 的函数
-#     """
-#     def extractor(df: pd.DataFrame) -> pd.DataFrame:
-#         if text_column not in df.columns:
-#             raise ValueError(f"列 '{text_column}' 不存在于DataFrame中")
-            
-#         extracted_data = df[text_column].apply(
-#             lambda x: JSONExtractor.extract_json_from_text(x) if pd.notna(x) else None
-#         )
-        
-#         return df.assign(**{output_column: extracted_data})
-    
-#     return extractor

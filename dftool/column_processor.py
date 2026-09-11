@@ -3,11 +3,8 @@ from .json_utils import JsonUtils
 from typing import Optional, List, Callable, Sequence, Union
 import pandas as pd
 import numpy as np
-import copy
 
 import json
-import ast
-import demjson3
 import re
 
 import logging
@@ -72,7 +69,6 @@ class ColumnProcessor:
             if not drop_duplicates:
                 return df_keep
             else:
-                import json
                 # 将不可哈希的列转为 JSON 字符串
                 temp_cols = {}
                 for col in df_keep.columns:
@@ -158,6 +154,16 @@ class ColumnProcessor:
         --------
         Callable: 接受DataFrame并返回处理后的DataFrame的函数
         """
+        # 归一化入参：统一为列表，避免对标量/字符串求长度或逐字符迭代
+        if isinstance(select_cols, str):
+            select_cols = [select_cols]
+        if isinstance(fill_values, (list, tuple)):
+            fill_values = list(fill_values)
+        else:
+            fill_values = [fill_values] * len(select_cols)
+        if output_cols is not None and isinstance(output_cols, str):
+            output_cols = [output_cols]
+
         # 验证select_cols和fill_values长度匹配
         if len(select_cols) != len(fill_values):
             raise ValueError(
@@ -171,14 +177,13 @@ class ColumnProcessor:
             if output_cols is None:
                 # 自动生成输出列名：在原列名后添加'_filled'
                 output_cols = [f"{col}_filled" for col in select_cols]
-                
-                # 验证output_cols长度匹配
-                if len(output_cols) != len(select_cols):
-                    raise ValueError(
-                        f"当replace=False时，output_cols长度必须与select_cols相同。"
-                        f"select_cols长度: {len(select_cols)}, "
-                        f"output_cols长度: {len(output_cols)}"
-                    )        
+            elif len(output_cols) != len(select_cols):
+                # 验证用户传入的output_cols长度匹配
+                raise ValueError(
+                    f"当replace=False时，output_cols长度必须与select_cols相同。"
+                    f"select_cols长度: {len(select_cols)}, "
+                    f"output_cols长度: {len(output_cols)}"
+                )        
         def _df_fillna_column(df: pd.DataFrame) -> pd.DataFrame:
             
             # check: select_col列是否在df中
@@ -362,8 +367,9 @@ class ColumnProcessor:
                     except Exception:
                         return None
             
-            df[output_key] = df[select_col].apply(safe_length)
-            return df
+            df_copy = df.copy()
+            df_copy[output_key] = df_copy[select_col].apply(safe_length)
+            return df_copy
         
         return _get_column_element_lengths
     
@@ -523,11 +529,10 @@ class ColumnProcessor:
     @staticmethod
     def str_column_to_json_column(
         select_col: str, 
-        output_col: Optional[str] = None,
-        strict: bool = False
+        output_col: Optional[str] = None
     ) -> Callable[[pd.DataFrame], pd.DataFrame]:
         """
-        使用 demjson3 解析 JSON，支持更多非标准格式
+        使用 JsonUtils.safe_json_loads 解析 JSON，兼容更多非标准格式
         
         Args:
             select_col: 要转换的列名
@@ -545,7 +550,6 @@ class ColumnProcessor:
             for text in df_copy[select_col]:
                 result_json.append(JsonUtils.safe_json_loads(text))
 
-            nonlocal output_col
             final_json_col = output_col if output_col is not None else f"{select_col}_json"
             df_copy[final_json_col] = result_json
             
@@ -659,39 +663,3 @@ class ColumnProcessor:
                 logger.info(f"成功对列 {col_name} 执行炸裂操作！")
                 return df_exploded
             return _explode_column
-    
-    
-# if __name__=="__main__":
-#     from dataflow.operators.core_text import PandasOperator
-#     from dataflow.utils.storage import FileStorage
-#     storage_config= {
-#                 "first_entry_file_name": "/cuiyah/cuiyah_2025/20251121_OB_SFT/data/fake_value.jsonl",
-#                 "cache_path": "./output/false_values",
-#                 "file_name_prefix": "false_values_step",
-#                 "cache_type": "json",
-#                 "output_raw_content": True
-#             }
-#     storage_df = FileStorage(**storage_config)
-#     # first_entry_file_name="/cuiyah/cuiyah_2025/20251121_OB_SFT/data/fake_value.jsonl"
-#     # data_df = pd.read_json(first_entry_file_name, lines=True, typ='series').to_frame(name='raw_content')
-    
-#     # 初始化列操作
-#     fn1 = ColumnProcessor.explode_dict_column_to_kv_tuples(select_col="raw_content") # 拆分指定字典列的k-v对（含纵向展开操作）
-#     fn2 = ColumnProcessor.split_pairs(select_col="kv_pairs", output_cols=["table_name", "table_values"]) # k-v 单独成列
-#     fn3 = ColumnProcessor.explode_dict_column_to_kv_tuples(select_col="table_values")
-#     fn4 = ColumnProcessor.split_pairs(select_col="kv_pairs", output_cols=["sub_table_name", "sub_table_values"])
-#     fn5 = ColumnProcessor.expand_dict_column_to_columns(select_col="sub_table_values")
-#     fn6 = ColumnProcessor.df_select_columns(select_cols=['table_name', 'sub_table_name', 'field', 'action'])
-#     # 可以链式调用
-#     processors = [
-#         fn1,
-#         fn2,
-#         fn3,
-#         fn4,
-#         fn5,
-#         fn6
-#     ]
-#     step = PandasOperator(process_fn=processors)
-#     step.run(
-#             storage=storage_df.step()
-#             )

@@ -6,16 +6,13 @@ Namespace 工具模块 - 提供字典与 Namespace 之间的递归转换和操�
 """
 
 from argparse import Namespace
-from typing import Any, Dict, List, Union, TypeVar, overload, Optional, Set, Callable
+from typing import Any, Dict, List, Union, overload, Optional, Set
 import copy
 import json
-from functools import lru_cache
 import logging
 
 # 配置日志
 logger = logging.getLogger(__name__)
-
-T = TypeVar('T')
 
 
 class NamespaceToolsError(Exception):
@@ -449,40 +446,6 @@ def from_json(json_str: str) -> Union[Namespace, List, Any]:
     """
     data = json.loads(json_str)
     return dict_to_namespace(data)
-
-
-# ============ 缓存支持 ============
-
-@lru_cache(maxsize=128)
-def cached_dict_to_namespace(data_hash: int, data: Union[Dict, List, Any]) -> Union[Namespace, List, Any]:
-    """
-    带缓存的 dict_to_namespace 转换（仅用于可哈希的数据）
-    
-    Args:
-        data_hash: 数据的哈希值
-        data: 原始数据
-        
-    Returns:
-        转换后的对象
-    """
-    return dict_to_namespace(data)
-
-
-def create_cached_converter(maxsize: int = 128) -> Callable:
-    """
-    创建带缓存的转换器
-    
-    Args:
-        maxsize: 缓存最大大小
-        
-    Returns:
-        带缓存的转换函数
-    """
-    @lru_cache(maxsize=maxsize)
-    def cached_converter(data_hash: int, data_tuple: tuple) -> Union[Namespace, List, Any]:
-        # 将元组转换回原始数据
-        return dict_to_namespace(data_tuple)
-    return cached_converter
 
 
 # ============ 工具函数 ============
